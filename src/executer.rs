@@ -48,10 +48,12 @@ pub fn format_output(
 ) -> Result<String> {
     let mut response_string = String::new();
     let headers = resp.headers().to_owned();
+    let status = resp.status().to_owned();
     let raw_body = resp.text()
         .with_context(|| "unable to decode response body")?;
 
     if full_response {
+        response_string.push_str(format!("status: {status}\n").as_str());
         for (k, v) in headers.iter() {
             match v.to_str() {
                 Ok(hv) => response_string.push_str(format!("{}: {}\n", k.to_string(), hv).as_str()),

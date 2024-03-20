@@ -33,7 +33,7 @@ Requests also support basic template arguments:
 ```json
 {
     "method": "GET",
-    "url": "https://{{ env_HOST }}/api/2/{{ arg_pathparam }}/foo
+    "url": "https://{{ env_HOST }}/api/2/{{ arg_pathparam }}/foo"
 }
 ```
 

@@ -120,7 +120,7 @@ impl Authenticate for Auth {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Request {
-    version: HttpVersion,
+    version: Option<HttpVersion>,
     method: HttpMethod,
     url: StringOrUrl,
     headers: Option<HashMap<String, String>>,
@@ -371,7 +371,7 @@ mod test {
         let mut headers = HashMap::new();
         headers.insert("headerkey".to_string(), "headervalue".to_string());
         let r = Request {
-            version: HttpVersion::V1_1,
+            version: Some(HttpVersion::V1_1),
             url: StringOrUrl::String("https://example.com".to_string()),
             method: HttpMethod::GET,
             headers: Some(headers),
@@ -436,7 +436,7 @@ mod test {
         assert_eq!(
             r, 
             Request {
-                version: HttpVersion::V1_1,
+                version: Some(HttpVersion::V1_1),
                 url: StringOrUrl::String("https://example.com".to_string()),
                 method: HttpMethod::GET,
                 headers: Some(headers),

@@ -1,0 +1,7 @@
+{
+    "method": "GET",
+    "url": "https://httpbin.org/get?key=val",
+    "headers": {
+        "accept": "application/json"
+    }
+}
