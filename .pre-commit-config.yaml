@@ -1,0 +1,24 @@
+repos:
+  - repo: https://github.com/DevinR528/cargo-sort
+    rev: v1.0.7
+    hooks:
+    - id: cargo-sort
+  - repo: meta
+    hooks:
+    - id: check-useless-excludes
+  - repo: local
+    hooks:
+      - id: fmt
+        name: fmt
+        language: system
+        types: [file, rust]
+        entry: cargo fmt -- --check
+        pass_filenames: false
+
+      - id: clippy
+        name: clippy
+        language: system
+        types: [file, rust]
+        entry: cargo clippy
+        pass_filenames: false
+
