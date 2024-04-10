@@ -1,10 +1,9 @@
-use std::str::FromStr;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
-use log::{warn, error};
-use reqwest;
+use log::{error, warn};
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderName;
 use reqwest::header::HeaderValue;
@@ -16,18 +15,17 @@ pub const AUTHORIZATION: &str = "authorization";
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 enum HttpVersion {
-    #[serde(rename="HTTP/0.9")]
-    V0_9,  
-    #[serde(rename="HTTP/1.0")]
+    #[serde(rename = "HTTP/0.9")]
+    V0_9,
+    #[serde(rename = "HTTP/1.0")]
     V1_0,
-    #[serde(rename="HTTP/1.1")]
+    #[serde(rename = "HTTP/1.1")]
     V1_1,
-    #[serde(rename="HTTP/2.0")]
+    #[serde(rename = "HTTP/2.0")]
     V2,
-    #[serde(rename="HTTP/3.0")]
+    #[serde(rename = "HTTP/3.0")]
     V3,
 }
-
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 enum HttpMethod {
@@ -39,14 +37,14 @@ enum HttpMethod {
     CONNECT,
     OPTIONS,
     TRACE,
-    PATCH
+    PATCH,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 enum StringOrUrl {
     String(String),
-    Url(Url)
+    Url(Url),
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -56,7 +54,7 @@ pub struct Url {
     port: Option<i16>,
     path: Option<String>,
     params: Option<HashMap<String, String>>,
-    fragment: Option<String>
+    fragment: Option<String>,
 }
 
 impl std::fmt::Display for Url {
@@ -92,13 +90,8 @@ impl std::fmt::Display for Url {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 enum Auth {
-    Basic {
-        username: String,
-        password: String
-    },
-    Bearer {
-        token: String
-    }
+    Basic { username: String, password: String },
+    Bearer { token: String },
 }
 
 trait Authenticate {
@@ -109,7 +102,11 @@ impl Authenticate for Auth {
     fn generate_auth_header(&self) -> String {
         match &self {
             Auth::Basic { username, password } => {
-                format!("Basic {base64}", base64=BASE64_STANDARD.encode(format!("{u}:{p}", u=username, p=password).as_bytes()))
+                format!(
+                    "Basic {base64}",
+                    base64 = BASE64_STANDARD
+                        .encode(format!("{u}:{p}", u = username, p = password).as_bytes())
+                )
             }
             Auth::Bearer { token } => {
                 format!("Bearer {token}")
@@ -125,31 +122,31 @@ pub struct Request {
     url: StringOrUrl,
     headers: Option<HashMap<String, String>>,
     body: Option<RequestBody>,
-    auth: Option<Auth>
+    auth: Option<Auth>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestBody {
     raw: Option<String>,
     filepath: Option<String>,
-    json: Option<Value>
+    json: Option<Value>,
 }
 
 impl ToString for RequestBody {
     fn to_string(&self) -> String {
-        // Prioritize json 
+        // Prioritize json
         if let Some(js) = &self.json {
-            return js.to_string()
+            return js.to_string();
         } else if let Some(s) = &self.raw {
-           return s.clone()
+            return s.clone();
         } else if let Some(fp) = &self.filepath {
             match std::fs::read_to_string(fp) {
                 Ok(content) => return content,
                 Err(e) => {
                     error!("Unable to load {fp}, error={e}");
-                    return "".to_string()
+                    return "".to_string();
                 }
-            } 
+            }
         }
         warn!("null request body");
         "".to_string()
@@ -179,8 +176,7 @@ impl Request {
                     req = req.body(b.to_string())
                 }
                 req.send()
-
-            },
+            }
             HttpMethod::DELETE => todo!(),
             HttpMethod::CONNECT => todo!(),
             HttpMethod::OPTIONS => todo!(),
@@ -197,7 +193,7 @@ impl Request {
                 let headername = HeaderName::from_str(k.to_lowercase().as_str())?;
                 let headerval = HeaderValue::from_str(v.to_lowercase().as_str())?;
                 header_map.insert(headername, headerval);
-            }                
+            }
         }
 
         // Special case for auth
@@ -213,11 +209,9 @@ impl Request {
     fn build_url(&self) -> String {
         match &self.url {
             StringOrUrl::String(s) => s.clone(),
-            StringOrUrl::Url(u) => u.to_string() 
-        } 
+            StringOrUrl::Url(u) => u.to_string(),
+        }
     }
-
-
 }
 
 pub fn parse_request(req_json: &String) -> Result<Request> {
@@ -230,11 +224,26 @@ mod test {
 
     #[test]
     fn test_http_version_serialize() {
-        assert_eq!(serde_json::to_string(&HttpVersion::V0_9).unwrap(), "\"HTTP/0.9\"");
-        assert_eq!(serde_json::to_string(&HttpVersion::V1_0).unwrap(), "\"HTTP/1.0\"");
-        assert_eq!(serde_json::to_string(&HttpVersion::V1_1).unwrap(), "\"HTTP/1.1\"");
-        assert_eq!(serde_json::to_string(&HttpVersion::V2).unwrap(), "\"HTTP/2.0\"");
-        assert_eq!(serde_json::to_string(&HttpVersion::V3).unwrap(), "\"HTTP/3.0\"");
+        assert_eq!(
+            serde_json::to_string(&HttpVersion::V0_9).unwrap(),
+            "\"HTTP/0.9\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpVersion::V1_0).unwrap(),
+            "\"HTTP/1.0\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpVersion::V1_1).unwrap(),
+            "\"HTTP/1.1\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpVersion::V2).unwrap(),
+            "\"HTTP/2.0\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpVersion::V3).unwrap(),
+            "\"HTTP/3.0\""
+        );
     }
 
     #[test]
@@ -254,14 +263,35 @@ mod test {
     #[test]
     fn test_http_method_serialize() {
         assert_eq!(serde_json::to_string(&HttpMethod::GET).unwrap(), "\"GET\"");
-        assert_eq!(serde_json::to_string(&HttpMethod::HEAD).unwrap(), "\"HEAD\"");
-        assert_eq!(serde_json::to_string(&HttpMethod::POST).unwrap(), "\"POST\"");
+        assert_eq!(
+            serde_json::to_string(&HttpMethod::HEAD).unwrap(),
+            "\"HEAD\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpMethod::POST).unwrap(),
+            "\"POST\""
+        );
         assert_eq!(serde_json::to_string(&HttpMethod::PUT).unwrap(), "\"PUT\"");
-        assert_eq!(serde_json::to_string(&HttpMethod::DELETE).unwrap(), "\"DELETE\"");
-        assert_eq!(serde_json::to_string(&HttpMethod::CONNECT).unwrap(), "\"CONNECT\"");
-        assert_eq!(serde_json::to_string(&HttpMethod::OPTIONS).unwrap(), "\"OPTIONS\"");
-        assert_eq!(serde_json::to_string(&HttpMethod::TRACE).unwrap(), "\"TRACE\"");
-        assert_eq!(serde_json::to_string(&HttpMethod::PATCH).unwrap(), "\"PATCH\"");
+        assert_eq!(
+            serde_json::to_string(&HttpMethod::DELETE).unwrap(),
+            "\"DELETE\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpMethod::CONNECT).unwrap(),
+            "\"CONNECT\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpMethod::OPTIONS).unwrap(),
+            "\"OPTIONS\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpMethod::TRACE).unwrap(),
+            "\"TRACE\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HttpMethod::PATCH).unwrap(),
+            "\"PATCH\""
+        );
     }
 
     #[test]
@@ -288,25 +318,55 @@ mod test {
 
     #[test]
     fn test_auth_serialize() {
-        let a = Auth::Basic { username: "user".to_string(), password: "pass".to_string() };
-        assert_eq!(serde_json::to_string(&a).unwrap(), "{\"type\":\"Basic\",\"username\":\"user\",\"password\":\"pass\"}");
-        let a = Auth::Bearer { token: "token".to_string() };
-        assert_eq!(serde_json::to_string(&a).unwrap(), "{\"type\":\"Bearer\",\"token\":\"token\"}");
+        let a = Auth::Basic {
+            username: "user".to_string(),
+            password: "pass".to_string(),
+        };
+        assert_eq!(
+            serde_json::to_string(&a).unwrap(),
+            "{\"type\":\"Basic\",\"username\":\"user\",\"password\":\"pass\"}"
+        );
+        let a = Auth::Bearer {
+            token: "token".to_string(),
+        };
+        assert_eq!(
+            serde_json::to_string(&a).unwrap(),
+            "{\"type\":\"Bearer\",\"token\":\"token\"}"
+        );
     }
 
     #[test]
     fn test_auth_deserialize() {
-        let a: Auth = serde_json::from_str("{\"type\":\"Basic\",\"username\":\"user\",\"password\":\"pass\"}").unwrap();
-        assert_eq!(a, Auth::Basic { username: "user".to_string(), password: "pass".to_string() });
+        let a: Auth = serde_json::from_str(
+            "{\"type\":\"Basic\",\"username\":\"user\",\"password\":\"pass\"}",
+        )
+        .unwrap();
+        assert_eq!(
+            a,
+            Auth::Basic {
+                username: "user".to_string(),
+                password: "pass".to_string()
+            }
+        );
         let a: Auth = serde_json::from_str("{\"type\":\"Bearer\",\"token\":\"token\"}").unwrap();
-        assert_eq!(a, Auth::Bearer { token: "token".to_string() });
+        assert_eq!(
+            a,
+            Auth::Bearer {
+                token: "token".to_string()
+            }
+        );
     }
 
     #[test]
     fn test_auth_generate_auth_header() {
-        let a = Auth::Basic { username: "user".to_string(), password: "pass".to_string() };
+        let a = Auth::Basic {
+            username: "user".to_string(),
+            password: "pass".to_string(),
+        };
         assert_eq!(a.generate_auth_header(), "Basic dXNlcjpwYXNz");
-        let a = Auth::Bearer { token: "token".to_string() };
+        let a = Auth::Bearer {
+            token: "token".to_string(),
+        };
         assert_eq!(a.generate_auth_header(), "Bearer token");
     }
 
@@ -320,7 +380,7 @@ mod test {
             port: Some(8080),
             path: Some("/path".to_string()),
             params: Some(params),
-            fragment: Some("fragment".to_string())
+            fragment: Some("fragment".to_string()),
         };
         assert_eq!(serde_json::to_string(&u).unwrap(), "{\"protocol\":\"https\",\"host\":\"example.com\",\"port\":8080,\"path\":\"/path\",\"params\":{\"key\":\"value\"},\"fragment\":\"fragment\"}");
     }
@@ -330,14 +390,17 @@ mod test {
         let u: Url = serde_json::from_str("{\"protocol\":\"https\",\"host\":\"example.com\",\"port\":8080,\"path\":\"/path\",\"params\":{\"key\":\"value\"},\"fragment\":\"fragment\"}").unwrap();
         let mut params = HashMap::new();
         params.insert("key".to_string(), "value".to_string());
-        assert_eq!(u, Url {
-            protocol: Some("https".to_string()),
-            host: "example.com".to_string(),
-            port: Some(8080),
-            path: Some("/path".to_string()),
-            params: Some(params),
-            fragment: Some("fragment".to_string())
-        });
+        assert_eq!(
+            u,
+            Url {
+                protocol: Some("https".to_string()),
+                host: "example.com".to_string(),
+                port: Some(8080),
+                path: Some("/path".to_string()),
+                params: Some(params),
+                fragment: Some("fragment".to_string())
+            }
+        );
     }
 
     #[test]
@@ -348,7 +411,7 @@ mod test {
             port: None,
             path: None,
             params: None,
-            fragment: None
+            fragment: None,
         };
         assert_eq!(u.to_string(), "https://example.com");
 
@@ -361,9 +424,12 @@ mod test {
             port: Some(8080),
             path: Some("/path".to_string()),
             params: Some(params),
-            fragment: Some("fragment".to_string())
+            fragment: Some("fragment".to_string()),
         };
-        assert_eq!(u.to_string(), "https://example.com:8080/path?key1=value1&key2=value2#fragment");
+        assert_eq!(
+            u.to_string(),
+            "https://example.com:8080/path?key1=value1&key2=value2#fragment"
+        );
     }
 
     #[test]
@@ -378,19 +444,22 @@ mod test {
             body: Some(RequestBody {
                 raw: Some("raw".to_string()),
                 filepath: Some("filepath".to_string()),
-                json: Some(serde_json::json!({"key": "value"}))
+                json: Some(serde_json::json!({"key": "value"})),
             }),
-            auth: Some(Auth::Basic { username: "user".to_string(), password: "pass".to_string() })
+            auth: Some(Auth::Basic {
+                username: "user".to_string(),
+                password: "pass".to_string(),
+            }),
         };
         assert_eq!(
-            serde_json::to_string(&r).unwrap(), 
+            serde_json::to_string(&r).unwrap(),
             serde_json::json!({
                 "version": "HTTP/1.1",
                 "method": "GET",
                 "url": "https://example.com",
                 "headers": {
                     "headerkey": "headervalue"
-                }, 
+                },
                 "body": {
                     "raw": "raw",
                     "filepath": "filepath",
@@ -403,7 +472,8 @@ mod test {
                     "username": "user",
                     "password": "pass"
                 }
-            }).to_string()
+            })
+            .to_string()
         );
     }
 
@@ -416,7 +486,7 @@ mod test {
                 "url": "https://example.com",
                 "headers": {
                     "headerkey": "headervalue"
-                }, 
+                },
                 "body": {
                     "raw": "raw",
                     "filepath": "filepath",
@@ -429,12 +499,15 @@ mod test {
                     "username": "user",
                     "password": "pass"
                 }
-            }).to_string().as_str()
-        ).unwrap();
+            })
+            .to_string()
+            .as_str(),
+        )
+        .unwrap();
         let mut headers = HashMap::new();
         headers.insert("headerkey".to_string(), "headervalue".to_string());
         assert_eq!(
-            r, 
+            r,
             Request {
                 version: Some(HttpVersion::V1_1),
                 url: StringOrUrl::String("https://example.com".to_string()),
@@ -445,7 +518,10 @@ mod test {
                     filepath: Some("filepath".to_string()),
                     json: Some(serde_json::json!({"key": "value"}))
                 }),
-                auth: Some(Auth::Basic { username: "user".to_string(), password: "pass".to_string() })
+                auth: Some(Auth::Basic {
+                    username: "user".to_string(),
+                    password: "pass".to_string()
+                })
             }
         );
     }

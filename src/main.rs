@@ -1,6 +1,8 @@
-use clap::{Parser, Subcommand};
+use crate::db::get_or_create_db;
 use crate::executer::{execute, format_output};
+use clap::{Parser, Subcommand};
 
+mod db;
 mod executer;
 mod parser;
 
@@ -8,7 +10,7 @@ mod parser;
 #[command(author, version, about, long_about = None)]
 struct Args {
     #[command(subcommand)]
-    cmd: Commands
+    cmd: Commands,
 }
 
 /// Ideas for future subcommands
@@ -27,11 +29,13 @@ enum Commands {
         full_response: bool,
         #[arg(short, long, action)]
         pretty_print: bool,
-    }
+    },
 }
 
 /// Parse a single key-value pair
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn std::error::Error + Send + Sync + 'static>>
+fn parse_key_val<T, U>(
+    s: &str,
+) -> Result<(T, U), Box<dyn std::error::Error + Send + Sync + 'static>>
 where
     T: std::str::FromStr,
     T::Err: std::error::Error + Send + Sync + 'static,
@@ -44,25 +48,29 @@ where
     Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
 }
 
-
 fn main() {
     let args = Args::parse();
+    let db_conn = match get_or_create_db() {
+        Ok(conn) => Some(conn),
+        Err(e) => {
+            log::error!("failed to get or create db, error={e}");
+            None
+        }
+    };
     match args.cmd {
-        Commands::Exec { 
-            input_file, 
+        Commands::Exec {
+            input_file,
             output_file,
             kwargs,
             full_response,
             pretty_print,
         } => {
-            let output = execute(
-                &input_file, 
-                kwargs.into_iter().collect()
-            ).and_then(|r| format_output(r, full_response, pretty_print, output_file));
+            let output = execute(&input_file, kwargs.into_iter().collect(), db_conn)
+                .and_then(|r| format_output(r, full_response, pretty_print, output_file));
             match output {
                 Ok(s) => {
                     println!("{}", s);
-                },
+                }
                 Err(e) => eprintln!("🤦 {:?}", e),
             }
         }

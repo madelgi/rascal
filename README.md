@@ -6,7 +6,7 @@ A simple request runner that can execute requests defined in templated JSON file
 
 Requests have the following format:
 
-```json
+```jsonc
 {
     // optional, defaults to HTTP/2
     "version": "str | null",
@@ -26,11 +26,12 @@ Requests have the following format:
         "password": "str | null",
         "token": "str | null"
     }
+}
 ```
 
 Requests also support basic template arguments:
 
-```json
+```jsonc
 {
     "method": "GET",
     "url": "https://{{ env_HOST }}/api/2/{{ arg_pathparam }}/foo"
